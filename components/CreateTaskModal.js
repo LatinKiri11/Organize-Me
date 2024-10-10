@@ -80,15 +80,6 @@ const CreateTaskModal = ({ isVisible, onClose, onCreate }) => {
           keyboardType="numeric"
         />
 
-        <TouchableOpacity 
-          style={[styles.completedButton, newTask.is_completed && styles.completedButtonActive]}
-          onPress={(value) => setNewTask({ ...newTask, is_completed: value })}
-        >
-          <Text style={styles.completedButtonText}>
-            {newTask.is_completed ? '✓ Completed' : 'Mark as Completed'}
-          </Text>
-        </TouchableOpacity>
-
         <View style={styles.modalButtons}>
           <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
             <Text style={styles.buttonText}>Cancel</Text>
@@ -139,22 +130,6 @@ const styles = StyleSheet.create({
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  completedButton: {
-    width: '100%',
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#E5E5EA',
-    marginBottom: 16,
-  },
-  completedButtonActive: {
-    backgroundColor: '#34C759',
-  },
-  completedButtonText: {
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
   },
   cancelButton: {
     flex: 1,

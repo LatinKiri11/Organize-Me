@@ -3,9 +3,12 @@ import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { supabase } from './supabaseClient';
 import EditTaskModal from './EditTaskModal';
 import { isAfter } from 'date-fns';
+import { Circle } from 'react-native-progress';
 
-const Task = ({ taskId, onEdit, onDelete }) => {
+
+const Task = ({ taskId, onDelete }) => {
   const [task, setTask] = useState(null);
+  const [progressTime, setProgressTime] = useState(0);
   const [isEditModalVisible, setEditModalVisible] = useState(false);
 
   const fetchTask = async () => {
@@ -19,6 +22,7 @@ const Task = ({ taskId, onEdit, onDelete }) => {
       if (error) throw error;
 
       setTask(data);
+      setProgressTime(0);
     } catch (err) {
       console.error('Error fetching task:', err);
       Alert.alert('Error fetching task:', err.message);
@@ -86,8 +90,33 @@ const Task = ({ taskId, onEdit, onDelete }) => {
 
   if (!task) return <Text>Loading task...</Text>;
 
+  
   const dueDate = new Date(task.due_date);
   const isOverdue = isAfter(new Date(), dueDate);
+
+  const handleProgressClick = async () => {
+    let newProgress = Math.min(progressTime + 0.25, 1); // Increment by 25%, max at 100%
+    setProgressTime(newProgress); // Update the progress state
+
+    // When progress reaches 100%, mark task as completed
+    if (newProgress == 1) {
+      const updatedTask = { ...task, is_completed: true };
+      setTask(updatedTask);
+      try {
+        const { error } = await supabase
+          .from('tasks_table')
+          .update({ is_completed: true })
+          .eq('id', task.id);
+
+        if (error) {
+          console.error('Error updating task status:', error);
+          Alert.alert('Error updating task:', error.message);
+        }
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+  };
 
   return (
     <TouchableOpacity
@@ -96,6 +125,9 @@ const Task = ({ taskId, onEdit, onDelete }) => {
     >
       <View style={styles.taskContainer}>
         <View style={styles.taskHeader}>
+          <TouchableOpacity onPress={handleProgressClick} style={styles.progressContainer}>
+            <CircularProgress progress={progressTime} size={40} />
+          </TouchableOpacity>
           <Text style={styles.taskName}>{task.task_name}</Text>
           <View style={[styles.statusBadge, task.is_completed ? styles.completedBadge : (isOverdue ? styles.overdueBadge : styles.pendingBadge)]}>
             <Text style={styles.statusText}>
@@ -128,6 +160,26 @@ const Task = ({ taskId, onEdit, onDelete }) => {
   );
 };
 
+// CircularProgress function
+const CircularProgress = ({ progress, size = 100, color = 'lightblue' }) => {
+  return (
+    <View style={styles.wheel}>
+      <Circle
+        progress={progress} // A value between 0 and 1
+        size={size} // Size of the circle
+        indeterminate={progress === null} // If true, it will show an indeterminate state
+        color={color} // Color of the progress
+        style={styles.progress}
+      />
+      {progress !== null && (
+        <Text style={styles.progressText}>
+          {(progress * 100).toFixed(0)}%
+        </Text>
+      )}
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   taskContainer: {
     backgroundColor: '#ffffff',
@@ -142,7 +194,6 @@ const styles = StyleSheet.create({
   },
   taskHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
@@ -160,11 +211,13 @@ const styles = StyleSheet.create({
   taskDetails: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginLeft: 94,
   },
   description: {
     fontSize: 14,
     color: '#666666',
     marginBottom: 8,
+    marginLeft: 94,
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -187,19 +240,36 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'flex-end', // Aligns the button to the right
-    marginTop: 8, // Space between task details and button
+    justifyContent: 'flex-end',
+    marginTop: 8,
   },
   deleteButton: {
-    backgroundColor: '#FF3B30', // Red color for delete
-    borderRadius: 20, // Makes it oval
+    backgroundColor: '#FF3B30',
+    borderRadius: 20,
     paddingVertical: 6,
     paddingHorizontal: 12,
+    marginTop: -30,
   },
   deleteButtonText: {
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  wheel: {
+    padding: 10,
+    marginVertical: 5,
+    flexDirection: 'row',
+    marginBottom: -100,
+  },
+  progress: {
+    marginBottom: 1,
+  },
+  progressText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  progressContainer: {
+    marginRight: 10,
   },
 });
 
