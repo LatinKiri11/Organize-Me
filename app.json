@@ -4,6 +4,7 @@
     "slug": "Organize-Me",
     "version": "1.0.0",
     "orientation": "portrait",
+    "assets": "./assets/*",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "light",
     "entryPoint": "./node_modules/expo-router/entry",

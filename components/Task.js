@@ -110,12 +110,12 @@ const Task = ({ taskId, onDelete }) => {
 
     // When progress reaches 100%, mark task as completed
     if (newProgress == 1) {
-      const updatedTask = { ...task, is_completed: true };
+      const updatedTask = { ...task, is_completed: 1 };
       setTask(updatedTask);
       try {
         const { error } = await supabase
           .from('tasks_table')
-          .update({ is_completed: true })
+          .update({ is_completed: 1 })
           .eq('id', task.id);
 
         if (error) {
@@ -182,9 +182,9 @@ const Task = ({ taskId, onDelete }) => {
                 </View>
               </TapGestureHandler>
               <Text style={styles.taskName}>{task.task_name}</Text>
-              <View style={[styles.statusBadge, task.is_completed ? styles.completedBadge : (isOverdue ? styles.overdueBadge : styles.pendingBadge)]}>
+              <View style={[styles.statusBadge, task.is_completed === 1 ? styles.completedBadge : (isOverdue ? styles.overdueBadge : styles.pendingBadge)]}>
                 <Text style={styles.statusText}>
-                  {task.is_completed ? 'Completed' : (isOverdue ? 'Overdue' : 'Pending')}
+                  {task.is_completed === 1 ? 'Completed' : (isOverdue ? 'Overdue' : 'Pending')}
                 </Text>
               </View>
             </View>

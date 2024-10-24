@@ -9,7 +9,7 @@ const CreateTaskModal = ({ isVisible, onClose, onCreate }) => {
     time_to_take: '',
     due_date: '', // Expected to be a valid timestamp string
     repeating: 0, // Default to 0 (non-repeating)
-    is_completed: false, // Default to false
+    is_completed: 0, // Default to false
     user_id: null, // To store the user's id
   });
 
