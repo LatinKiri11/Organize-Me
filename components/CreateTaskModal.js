@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, TextInput, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { Modal, View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, Platform } from 'react-native';
 import { supabase } from './supabaseClient';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { Ionicons } from '@expo/vector-icons';
+import ReactDatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const CreateTaskModal = ({ isVisible, onClose, onCreate }) => {
   const [newTask, setNewTask] = useState({
@@ -9,13 +13,19 @@ const CreateTaskModal = ({ isVisible, onClose, onCreate }) => {
     time_to_take: '',
     due_date: '', // Expected to be a valid timestamp string
     repeating: 0, // Default to 0 (non-repeating)
-    is_completed: false, // Default to false
+    is_completed: 0, // Default to 0
     user_id: null, // To store the user's id
   });
 
   const [user, setUser] = useState(null);
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
-  // Fetch the current user session to get the user ID
+  useEffect(() => {
+    const today = new Date();
+    today.setDate(today.getDate());
+    setNewTask((prev) => ({ ...prev, due_date: today.toISOString().split('T')[0] }));
+  }, []);
+
   const fetchUser = async () => {
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error) {
@@ -29,10 +39,8 @@ const CreateTaskModal = ({ isVisible, onClose, onCreate }) => {
     fetchUser(); // Fetch the user when the modal mounts
   }, []);
 
-  // Handle task creation
   const handleCreate = async () => {
     try {
-      // Attach user_id to the task
       const taskWithUserId = {
         ...newTask,
         user_id: user?.id || null, // Assign user_id if user exists, otherwise null for unassigned tasks
@@ -55,12 +63,23 @@ const CreateTaskModal = ({ isVisible, onClose, onCreate }) => {
     }
   };
 
+  const handleConfirm = (date) => {
+    console.log("Date selected:", date); // Log the raw date picked by the user
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+    const day = String(date.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`; 
+  
+    console.log("Formatted date:", formattedDate); // Log the formatted date (this is what should be displayed)
+    
+    setNewTask({ ...newTask, due_date: formattedDate });
+    setDatePickerVisibility(false);
+  };
+  
+
   return (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={isVisible}
-    >
+    <Modal animationType="slide" transparent={true} visible={isVisible}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>Create Task</Text>
@@ -88,12 +107,66 @@ const CreateTaskModal = ({ isVisible, onClose, onCreate }) => {
             style={styles.input}
           />
 
-          <TextInput
-            placeholder="Due Date (YYYY-MM-DD)"
-            value={newTask.due_date}
-            onChangeText={(text) => setNewTask({ ...newTask, due_date: text })}
-            style={styles.input}
-          />
+          <View style={styles.datePickerContainer}>
+            {Platform.OS === 'web' ? (
+              <View style={styles.webDatePickerContainer}>
+                <ReactDatePicker
+                  selected={newTask.due_date ? new Date(newTask.due_date) : null}
+                  onChange={(date) => {
+                    // Manually format the selected date to YYYY-MM-DD without time zone conversion
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed, so add 1
+                    const day = String(date.getDate()).padStart(2, '0');
+
+                    // Construct the date in YYYY-MM-DD format
+                    const formattedDate = `${year}-${month}-${day}`;
+
+                    // Update the state with the correctly formatted date
+                    setNewTask({ ...newTask, due_date: formattedDate });
+                  }}
+                  dateFormat="yyyy-MM-dd"
+                  minDate={new Date()}
+                  popperPlacement="top-start"
+                  popperModifiers={{
+                    preventOverflow: {
+                      enabled: true,
+                    },
+                    hide: {
+                      enabled: false,
+                    },
+                  }}
+                  customInput={(
+                    <TouchableOpacity style={styles.webDatePickerInput}>
+                      <Text style={styles.inputText}>{newTask.due_date || "Select Date"}</Text>
+                      <Ionicons name="calendar-outline" size={24} color="#007AFF" />
+                    </TouchableOpacity>
+                  )}
+                />
+
+              </View>
+            ) : (
+              <>
+                <TextInput
+                  placeholder="Due Date (YYYY-MM-DD)"
+                  value={newTask.due_date}
+                  editable={false} // Prevent manual editing
+                  style={styles.input}
+                />
+                <TouchableOpacity onPress={() => setDatePickerVisibility(true)}>
+                  <Ionicons name="calendar-outline" size={24} color="#007AFF" />
+                </TouchableOpacity>
+                <DateTimePickerModal
+                  isVisible={isDatePickerVisible}
+                  mode="date"
+                  onConfirm={handleConfirm}
+                  onCancel={() => setDatePickerVisibility(false)}
+                  date={new Date(newTask.due_date)} // Convert to Date object
+                  minimumDate={new Date()} // Prevent past dates
+                  display="default"
+                />
+              </>
+            )}
+          </View>
 
           <TextInput
             placeholder="Repeat every X days (optional)"
@@ -148,6 +221,28 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
+    fontSize: 16,
+  },
+  datePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  webDatePickerContainer: {
+    position: 'relative',
+    zIndex: 9999, // Ensure the calendar is the top layer
+  },
+  webDatePickerInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 8,
+  },
+  inputText: {
+    flex: 1,
     fontSize: 16,
   },
   modalButtons: {

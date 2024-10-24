@@ -53,6 +53,8 @@ export default function Layout() {
         tabBarStyle: {
           backgroundColor: '#2E8B57', // Tab bar background color
           height: 60, // Adjust the height of the tab bar
+          backgroundColor: '#806043',
+          height: 60, 
         },
         headerStyle: {
           backgroundColor: '#2E8B57', // Header background color
@@ -60,6 +62,8 @@ export default function Layout() {
         headerTitleStyle: {
           color: '#F5F5DC', // Color for the header title
           fontSize: 20, // Font size for the header title
+          color: 'darkseagreen', 
+          fontSize: 20, 
         },
       })}
     >

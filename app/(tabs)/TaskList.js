@@ -1,14 +1,5 @@
 /*  TODO
 
-ADD SEARCH function back -- done.
-add filters back -- done.
-take out the complete field when creating task -- done.
-create task button as a plus symbol -- done.
-put in ryans checkbox -- done and it now updates the database when clicked on to completed.
-
-remove delete button in favor of a slide to delete function. --done
-add user authentication -- oh boy.
-
 task generes (personal, fitness, study, etc)
 add icon to show task genre
 priorities to tasks (high priority, low priority) --done
